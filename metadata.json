@@ -1,0 +1,6 @@
+{
+  "name": "SUPER INTELLIGENCE AI",
+  "description": "Autonomous, modular agentic AI platform featuring hierarchical planning, multi-model fallback, reasoning engine, deep memory architecture, and Android compatibility.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
