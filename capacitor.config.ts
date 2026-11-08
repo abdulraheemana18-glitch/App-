@@ -1,22 +1,12 @@
-export interface CapacitorConfig {
-  appId: string;
-  appName: string;
-  webDir: string;
-  server?: {
-    androidScheme?: string;
-    cleartext?: boolean;
-    url?: string;
-  };
-  plugins?: Record<string, unknown>;
-}
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ai.superintelligence.app',
+  appId: 'com.superintelligenceai.app',
   appName: 'SUPER INTELLIGENCE AI',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    cleartext: true,
+    cleartext: false,
   },
   plugins: {
     Keyboard: {
@@ -26,6 +16,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 1800,
       backgroundColor: '#030712',
       androidSplashResourceName: 'splash',
+      showSpinner: false,
     },
     StatusBar: {
       style: 'DARK',

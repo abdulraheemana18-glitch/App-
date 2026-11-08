@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "SUPER INTELLIGENCE AI",
+  "short_name": "SuperIntel",
+  "description": "Modular Autonomous Agentic AI Platform with hierarchical planning, reasoning engine, and memory.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#030712",
+  "theme_color": "#06b6d4",
+  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

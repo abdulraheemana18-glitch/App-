@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SUPER INTELLIGENCE AI</string>
+    <string name="title_activity_main">SUPER INTELLIGENCE AI</string>
+    <string name="package_name">com.superintelligenceai.app</string>
+    <string name="custom_url_scheme">com.superintelligenceai.app</string>
+</resources>

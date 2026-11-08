@@ -16,7 +16,33 @@ import {
 
 const TOKEN_KEY = 'si_auth_token';
 
+// Deployed HTTPS Cloud Run Backend URL for Super Intelligence AI
+const PROD_BACKEND_URL =
+  import.meta.env.VITE_API_URL ||
+  'https://ais-dev-bgzsd2ygh34ymvyiur6th7-401957677631.asia-northeast1.run.app';
+
+function getApiBaseUrl(): string {
+  if (typeof window === 'undefined') return '';
+  // Check if running on Android Capacitor native or mobile webview
+  const isCapacitorNative =
+    (window as any).Capacitor?.isNativePlatform?.() ||
+    window.location.protocol === 'capacitor:' ||
+    window.location.protocol === 'file:' ||
+    (window.location.hostname === 'localhost' && window.location.port !== '3000');
+
+  if (isCapacitorNative) {
+    return PROD_BACKEND_URL.replace(/\/+$/, '');
+  }
+  return '';
+}
+
 class ApiService {
+  private url(endpoint: string): string {
+    const base = getApiBaseUrl();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${base}${cleanEndpoint}`;
+  }
+
   private getHeaders(): HeadersInit {
     const token = localStorage.getItem(TOKEN_KEY) || 'usr-primary-001';
     return {
@@ -39,18 +65,18 @@ class ApiService {
 
   // Health
   public async getHealth() {
-    const res = await fetch('/api/health');
+    const res = await fetch(this.url('/api/health'));
     return res.json();
   }
 
   // Auth
   public async getMe(): Promise<{ user: UserProfile }> {
-    const res = await fetch('/api/auth/me', { headers: this.getHeaders() });
+    const res = await fetch(this.url('/api/auth/me'), { headers: this.getHeaders() });
     return res.json();
   }
 
   public async login(username: string): Promise<{ token: string; user: UserProfile }> {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(this.url('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username }),
@@ -61,7 +87,7 @@ class ApiService {
   }
 
   public async register(username: string, email: string): Promise<{ token: string; user: UserProfile }> {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch(this.url('/api/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email }),
@@ -76,18 +102,18 @@ class ApiService {
   }
 
   public async getUsers(): Promise<{ users: { id: string; username: string; email: string; role: string }[] }> {
-    const res = await fetch('/api/auth/users');
+    const res = await fetch(this.url('/api/auth/users'));
     return res.json();
   }
 
   // Sessions
   public async getSessions(): Promise<ChatSession[]> {
-    const res = await fetch('/api/chat/sessions', { headers: this.getHeaders() });
+    const res = await fetch(this.url('/api/chat/sessions'), { headers: this.getHeaders() });
     return res.json();
   }
 
   public async createSession(title: string, model?: string): Promise<ChatSession> {
-    const res = await fetch('/api/chat/sessions', {
+    const res = await fetch(this.url('/api/chat/sessions'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ title, model }),
@@ -96,7 +122,7 @@ class ApiService {
   }
 
   public async deleteSession(sessionId: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/api/chat/sessions/${sessionId}`, {
+    const res = await fetch(this.url(`/api/chat/sessions/${sessionId}`), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -105,7 +131,7 @@ class ApiService {
 
   // Messages
   public async getMessages(sessionId: string): Promise<ChatMessage[]> {
-    const res = await fetch(`/api/chat/sessions/${sessionId}/messages`, { headers: this.getHeaders() });
+    const res = await fetch(this.url(`/api/chat/sessions/${sessionId}/messages`), { headers: this.getHeaders() });
     return res.json();
   }
 
@@ -115,7 +141,7 @@ class ApiService {
     provider?: string,
     model?: string
   ): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
-    const res = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
+    const res = await fetch(this.url(`/api/chat/sessions/${sessionId}/messages`), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ content, provider, model }),
@@ -128,7 +154,7 @@ class ApiService {
   }
 
   public async sendFeedback(messageId: string, rating: 'thumbs_up' | 'thumbs_down', comment?: string) {
-    const res = await fetch(`/api/chat/messages/${messageId}/feedback`, {
+    const res = await fetch(this.url(`/api/chat/messages/${messageId}/feedback`), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ rating, comment }),
@@ -138,18 +164,18 @@ class ApiService {
 
   // Memories
   public async getMemories(type?: string, category?: string): Promise<MemoryRecord[]> {
-    let url = '/api/memory';
+    let endpoint = '/api/memory';
     const params = new URLSearchParams();
     if (type) params.append('type', type);
     if (category) params.append('category', category);
-    if (params.toString()) url += `?${params.toString()}`;
+    if (params.toString()) endpoint += `?${params.toString()}`;
 
-    const res = await fetch(url, { headers: this.getHeaders() });
+    const res = await fetch(this.url(endpoint), { headers: this.getHeaders() });
     return res.json();
   }
 
   public async addMemory(data: Partial<MemoryRecord>): Promise<MemoryRecord> {
-    const res = await fetch('/api/memory', {
+    const res = await fetch(this.url('/api/memory'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(data),
@@ -158,7 +184,7 @@ class ApiService {
   }
 
   public async deleteMemory(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/api/memory/${id}`, {
+    const res = await fetch(this.url(`/api/memory/${id}`), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -166,7 +192,7 @@ class ApiService {
   }
 
   public async consolidateMemories() {
-    const res = await fetch('/api/memory/consolidate', {
+    const res = await fetch(this.url('/api/memory/consolidate'), {
       method: 'POST',
       headers: this.getHeaders(),
     });
@@ -175,12 +201,12 @@ class ApiService {
 
   // Plans
   public async getPlans(): Promise<PlanRecord[]> {
-    const res = await fetch('/api/plans', { headers: this.getHeaders() });
+    const res = await fetch(this.url('/api/plans'), { headers: this.getHeaders() });
     return res.json();
   }
 
   public async createPlan(goal: string, sessionId?: string): Promise<PlanRecord> {
-    const res = await fetch('/api/plans', {
+    const res = await fetch(this.url('/api/plans'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ goal, sessionId }),
@@ -189,7 +215,7 @@ class ApiService {
   }
 
   public async executeSubtask(planId: string, subtaskId: string) {
-    const res = await fetch(`/api/plans/${planId}/execute-subtask`, {
+    const res = await fetch(this.url(`/api/plans/${planId}/execute-subtask`), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ subtaskId }),
@@ -202,7 +228,7 @@ class ApiService {
   }
 
   public async revisePlan(planId: string, feedback: string): Promise<PlanRecord> {
-    const res = await fetch(`/api/plans/${planId}/revise`, {
+    const res = await fetch(this.url(`/api/plans/${planId}/revise`), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ feedback }),
@@ -211,7 +237,7 @@ class ApiService {
   }
 
   public async deletePlan(planId: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/api/plans/${planId}`, {
+    const res = await fetch(this.url(`/api/plans/${planId}`), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -220,18 +246,18 @@ class ApiService {
 
   // Agents
   public async getAgents(): Promise<AgentProfile[]> {
-    const res = await fetch('/api/agents');
+    const res = await fetch(this.url('/api/agents'));
     return res.json();
   }
 
   // Tools
   public async getTools(): Promise<ToolDefinition[]> {
-    const res = await fetch('/api/tools');
+    const res = await fetch(this.url('/api/tools'));
     return res.json();
   }
 
   public async executeTool(toolName: string, args: Record<string, unknown>, bypassApproval = false) {
-    const res = await fetch('/api/tools/execute', {
+    const res = await fetch(this.url('/api/tools/execute'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ toolName, args, bypassApproval }),
@@ -240,7 +266,7 @@ class ApiService {
   }
 
   public async approveTool(auditId: string, approved: boolean) {
-    const res = await fetch('/api/tools/approve', {
+    const res = await fetch(this.url('/api/tools/approve'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ auditId, approved }),
@@ -249,18 +275,18 @@ class ApiService {
   }
 
   public async getToolAudit(): Promise<ToolAuditEntry[]> {
-    const res = await fetch('/api/tools/audit', { headers: this.getHeaders() });
+    const res = await fetch(this.url('/api/tools/audit'), { headers: this.getHeaders() });
     return res.json();
   }
 
   // Knowledge
   public async getKnowledge(): Promise<KnowledgeDocument[]> {
-    const res = await fetch('/api/knowledge');
+    const res = await fetch(this.url('/api/knowledge'));
     return res.json();
   }
 
   public async ingestKnowledge(data: { title: string; category?: string; content: string; tags?: string[]; sourceUrl?: string }) {
-    const res = await fetch('/api/knowledge', {
+    const res = await fetch(this.url('/api/knowledge'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(data),
@@ -269,7 +295,7 @@ class ApiService {
   }
 
   public async searchKnowledge(query: string, category?: string) {
-    const res = await fetch('/api/knowledge/search', {
+    const res = await fetch(this.url('/api/knowledge/search'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ query, category }),
@@ -278,7 +304,7 @@ class ApiService {
   }
 
   public async deleteKnowledge(id: string) {
-    const res = await fetch(`/api/knowledge/${id}`, {
+    const res = await fetch(this.url(`/api/knowledge/${id}`), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -287,12 +313,12 @@ class ApiService {
 
   // Workspace
   public async getWorkspaceFiles(): Promise<WorkspaceFile[]> {
-    const res = await fetch('/api/workspace');
+    const res = await fetch(this.url('/api/workspace'));
     return res.json();
   }
 
   public async saveWorkspaceFile(path: string, content: string, language?: string) {
-    const res = await fetch('/api/workspace/save', {
+    const res = await fetch(this.url('/api/workspace/save'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ path, content, language }),
@@ -301,7 +327,7 @@ class ApiService {
   }
 
   public async runCode(code: string, language: string) {
-    const res = await fetch('/api/workspace/run', {
+    const res = await fetch(this.url('/api/workspace/run'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ code, language }),
@@ -311,18 +337,18 @@ class ApiService {
 
   // Models
   public async getModels(): Promise<ModelOption[]> {
-    const res = await fetch('/api/models');
+    const res = await fetch(this.url('/api/models'));
     return res.json();
   }
 
   // Evaluation
   public async getEvaluationStats(): Promise<EvaluationStats> {
-    const res = await fetch('/api/evaluation/stats');
+    const res = await fetch(this.url('/api/evaluation/stats'));
     return res.json();
   }
 
   public async runBenchmarkSuite(): Promise<BenchmarkResult[]> {
-    const res = await fetch('/api/evaluation/benchmarks/run', {
+    const res = await fetch(this.url('/api/evaluation/benchmarks/run'), {
       method: 'POST',
       headers: this.getHeaders(),
     });
